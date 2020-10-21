@@ -131,7 +131,7 @@ const Home = () => {
         />
       </Box>
 
-      <Box margin="auto 0 40px 0">
+      <Box margin="auto 0 24px 0">
         <Box display="flex" marginTop="24px">
           <Button
             onClick={copyToClipboard}
