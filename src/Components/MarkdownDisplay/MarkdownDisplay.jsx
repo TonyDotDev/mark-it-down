@@ -7,7 +7,7 @@ import gfm from 'remark-gfm';
 
 const useStyles = makeStyles({
   displayRoot: {
-    overflow: 'scroll',
+    overflow: 'auto',
     background: '#fff',
   },
 });

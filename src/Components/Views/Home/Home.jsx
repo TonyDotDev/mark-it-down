@@ -22,6 +22,7 @@ const useStyles = makeStyles((theme) => ({
     color: '#fff',
     backgroundColor: theme.palette.secondary.light,
   },
+  undoButton: {},
 }));
 
 const toastOptions = { position: toast.POSITION.BOTTOM_LEFT };
@@ -84,16 +85,45 @@ const Home = () => {
   };
 
   const clearInput = () => {
+    const clearedTemplate = template;
+    const clearedInput = inputValue;
+
+    const handleUndo = () => {
+      setTemplate(clearedTemplate);
+      setInputValue(clearedInput);
+    };
+
     setInputValue('');
     setTemplate(1);
-    toast('Markdown & Template Cleared 😎', toastOptions);
+    toast.error(
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          paddingRight: 16,
+        }}
+      >
+        Markdown cleared
+        <span style={{ marginLeft: 8 }} aria-label="img" role="img">
+          😮
+        </span>
+        <Button
+          style={{ marginLeft: 'auto' }}
+          variant="contained"
+          onClick={handleUndo}
+        >
+          Undo
+        </Button>
+      </div>,
+      toastOptions
+    );
   };
 
   const copyToClipboard = (e) => {
     textAreaRef.current.select();
     document.execCommand('copy');
     e.currentTarget.focus();
-    toast('Markdown Copied! 😎', toastOptions);
+    toast('Markdown copied 😎', toastOptions);
   };
   return (
     <Box
@@ -161,7 +191,7 @@ const Home = () => {
           style={{
             width: '45%',
             height: '60vh',
-            overflow: 'scroll',
+            overflow: 'auto',
             padding: 24,
           }}
         />
