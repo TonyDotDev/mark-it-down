@@ -9,6 +9,7 @@ import pullRequest from '../../../markdown/pullRequest.md';
 import Select from '../../Inputs/Select/Select';
 import Logo from '../../../static/svg/logo.svg';
 import MarkdownDisplay from '../../MarkdownDisplay/MarkdownDisplay';
+import storage from '../../../utils/storage';
 
 const useStyles = makeStyles((theme) => ({
   clearButtonRoot: {
@@ -60,10 +61,16 @@ const Home = () => {
   ];
 
   useEffect(() => {
+    const autoSaveTemplate = storage.get('autoSaveTemplate');
+    const autoSaveMarkdown = storage.get('autoSaveMarkdown');
+
     fetch(demo).then((res) =>
       res.text().then((text) => {
         setDemoTemplate(text);
-        setInputValue(text);
+        if (autoSaveMarkdown) setInputValue(autoSaveMarkdown);
+        else setInputValue(text);
+
+        if (autoSaveTemplate) setTemplate(autoSaveTemplate);
       })
     );
     fetch(pullRequest).then((res) =>
@@ -76,25 +83,34 @@ const Home = () => {
   const handleTextAreaChange = (e) => {
     const { value } = e.target;
     setInputValue(value);
+    storage.create('autoSaveMarkdown', value);
   };
 
   const handleSelectChange = (e) => {
     const { value } = e.target;
     setTemplate(value);
     setInputValue(templateOptions[value].template);
+    storage.create('autoSaveTemplate', value);
   };
 
   const clearInput = () => {
     const clearedTemplate = template;
     const clearedInput = inputValue;
 
+    setInputValue('');
+    setTemplate(1);
+
+    storage.remove('autoSavedMarkdown');
+    storage.remove('autoSavedTemplate');
+
     const handleUndo = () => {
       setTemplate(clearedTemplate);
       setInputValue(clearedInput);
+
+      storage.create('autoSavedMarkdown', clearedInput);
+      storage.create('autoSavedTemplate', clearedTemplate);
     };
 
-    setInputValue('');
-    setTemplate(1);
     toast.error(
       <div
         style={{
@@ -193,6 +209,7 @@ const Home = () => {
             height: '60vh',
             overflow: 'auto',
             padding: 24,
+            whiteSpace: 'pre-wrap',
           }}
         />
         <MarkdownDisplay
