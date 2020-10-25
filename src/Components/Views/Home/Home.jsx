@@ -26,13 +26,14 @@ const useStyles = makeStyles((theme) => ({
   undoButton: {},
 }));
 
-const toastOptions = { position: toast.POSITION.BOTTOM_LEFT };
+const toastOptions = { position: toast.POSITION.TOP_LEFT };
 
 const Home = () => {
   const [template, setTemplate] = useState(0);
   const [demoTemplate, setDemoTemplate] = useState('');
   const [pullRequestTemplate, setPullRequestTemplate] = useState('');
   const [inputValue, setInputValue] = useState(null);
+  const [typingTimeout, setTypingTimeout] = useState(null);
   const classes = useStyles();
   const textAreaRef = useRef(null);
 
@@ -80,17 +81,66 @@ const Home = () => {
     );
   }, []);
 
+  const handleUndo = (clearedTemplate, clearedInput) => {
+    setTemplate(clearedTemplate);
+    setInputValue(clearedInput);
+
+    storage.create('autoSavedMarkdown', clearedInput);
+    storage.create('autoSavedTemplate', clearedTemplate);
+  };
+
+  const renderUndoToast = (clearedTemplate, clearedInput, message) => {
+    toast.error(
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          paddingRight: 16,
+        }}
+      >
+        {message}
+        <span style={{ marginLeft: 8 }} aria-label="img" role="img">
+          😮
+        </span>
+        <Button
+          style={{ marginLeft: 'auto' }}
+          variant="contained"
+          onClick={() => {
+            handleUndo(clearedTemplate, clearedInput);
+          }}
+        >
+          Undo
+        </Button>
+      </div>,
+      toastOptions
+    );
+  };
+
   const handleTextAreaChange = (e) => {
     const { value } = e.target;
+    if (typingTimeout) clearTimeout(typingTimeout);
+
     setInputValue(value);
-    storage.create('autoSaveMarkdown', value);
+    setTypingTimeout(
+      setTimeout(() => {
+        storage.create('autoSaveMarkdown', value);
+        toast(`Changes saved 😎`, toastOptions);
+      }, 1000)
+    );
   };
 
   const handleSelectChange = (e) => {
+    const clearedTemplate = template;
+    const clearedInput = inputValue;
     const { value } = e.target;
+
     setTemplate(value);
     setInputValue(templateOptions[value].template);
+
     storage.create('autoSaveTemplate', value);
+    storage.create('autoSaveMarkdown', templateOptions[value].template);
+
+    renderUndoToast(clearedTemplate, clearedInput, 'Template changed');
   };
 
   const clearInput = () => {
@@ -103,36 +153,7 @@ const Home = () => {
     storage.remove('autoSavedMarkdown');
     storage.remove('autoSavedTemplate');
 
-    const handleUndo = () => {
-      setTemplate(clearedTemplate);
-      setInputValue(clearedInput);
-
-      storage.create('autoSavedMarkdown', clearedInput);
-      storage.create('autoSavedTemplate', clearedTemplate);
-    };
-
-    toast.error(
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          paddingRight: 16,
-        }}
-      >
-        Markdown cleared
-        <span style={{ marginLeft: 8 }} aria-label="img" role="img">
-          😮
-        </span>
-        <Button
-          style={{ marginLeft: 'auto' }}
-          variant="contained"
-          onClick={handleUndo}
-        >
-          Undo
-        </Button>
-      </div>,
-      toastOptions
-    );
+    renderUndoToast(clearedTemplate, clearedInput, 'Changes cleared');
   };
 
   const copyToClipboard = (e) => {
@@ -173,7 +194,7 @@ const Home = () => {
           value={template}
           items={templateOptions}
           placeholder="Select a template"
-          helpText="This overwrite your markdown"
+          helpText="This overwrites your markdown"
         />
       </Box>
 
@@ -210,6 +231,8 @@ const Home = () => {
             overflow: 'auto',
             padding: 24,
             whiteSpace: 'pre-wrap',
+            lineHeight: '149%',
+            fontSize: 16,
           }}
         />
         <MarkdownDisplay
